@@ -1,0 +1,119 @@
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import { Line } from "react-chartjs-2";
+import {
+  Chart as ChartJS,
+  LineElement,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  Tooltip,
+  Legend,
+} from "chart.js";
+
+ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement, Tooltip, Legend);
+
+function App() {
+  const [packets, setPackets] = useState([]);
+  const [logs, setLogs] = useState([]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      axios.get("http://127.0.0.1:8000/capture").then((res) => {
+        setPackets((prev) => [...prev.slice(-10), res.data.packet]);
+      });
+      axios.get("http://127.0.0.1:8000/logs").then((res) => {
+        setLogs(res.data.blockchain);
+      });
+    }, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="p-8 min-h-screen bg-gray-900 text-white">
+      <h1 className="text-4xl font-extrabold text-center text-blue-400 mb-10 drop-shadow-lg">
+        🔐 Smart Security Dashboard
+      </h1>
+
+      {/* Grid Layout */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        
+        {/* Live Traffic */}
+        <div className="bg-gray-800 shadow-lg rounded-2xl p-6 border border-gray-700">
+          <h2 className="text-2xl font-semibold mb-4 text-yellow-300">📊 Network Traffic</h2>
+          {packets.length > 0 ? (
+            <Line
+              data={{
+                labels: packets.map((p) => p.src_ip),
+                datasets: [
+                  {
+                    label: "Packet Size",
+                    data: packets.map((p) => p.size),
+                    borderColor: "#3b82f6",
+                    backgroundColor: "rgba(59,130,246,0.2)",
+                    tension: 0.3,
+                  },
+                ],
+              }}
+            />
+          ) : (
+            <p className="text-gray-400">⏳ Waiting for packets...</p>
+          )}
+        </div>
+
+        {/* Anomaly Alerts */}
+        <div className="bg-gray-800 shadow-lg rounded-2xl p-6 border border-gray-700">
+          <h2 className="text-2xl font-semibold mb-4 text-red-400">⚠️ Anomaly Alerts</h2>
+          <ul className="space-y-2">
+            {packets.filter((p) => p.anomaly).length === 0 ? (
+              <p className="text-green-400">✅ No anomalies detected</p>
+            ) : (
+              packets
+                .filter((p) => p.anomaly)
+                .map((p, i) => (
+                  <li key={i} className="bg-red-600/20 p-3 rounded-lg border border-red-500">
+                    Suspicious packet from <span className="font-bold">{p.src_ip}</span> → 
+                    <span className="text-red-300"> {p.size} bytes</span>
+                  </li>
+                ))
+            )}
+          </ul>
+        </div>
+      </div>
+
+      {/* Blockchain Logs */}
+      <div className="bg-gray-800 shadow-lg rounded-2xl p-6 mt-8 border border-gray-700">
+        <h2 className="text-2xl font-semibold mb-4 text-green-400">📝 Blockchain Logs</h2>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-gray-700 text-gray-200">
+                <th className="p-3">Index</th>
+                <th className="p-3">Src IP</th>
+                <th className="p-3">Dst IP</th>
+                <th className="p-3">Size</th>
+                <th className="p-3">Anomaly</th>
+                <th className="p-3">Hash</th>
+              </tr>
+            </thead>
+            <tbody>
+              {logs.map((log) => (
+                <tr key={log.index} className="border-b border-gray-700 hover:bg-gray-700/50">
+                  <td className="p-3">{log.index}</td>
+                  <td className="p-3">{log.data.src_ip}</td>
+                  <td className="p-3">{log.data.dst_ip}</td>
+                  <td className="p-3">{log.data.size}</td>
+                  <td className="p-3">{log.data.anomaly ? "⚠️" : "✅"}</td>
+                  <td className="p-3 text-gray-400">{log.hash.substring(0, 12)}...</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default App;
+
