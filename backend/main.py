@@ -16,6 +16,19 @@ from sqlalchemy.orm import sessionmaker
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import ed25519
+import logging
+from pythonjsonlogger import jsonlogger
+from fastapi import FastAPI # Or your other imports
+app = FastAPI()
+
+# =================== ADD THIS LOGGING SETUP CODE ===================
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+logHandler = logging.FileHandler("app_security_local.log")
+formatter = jsonlogger.JsonFormatter('%(asctime)s %(levelname)s %(message)s')
+logHandler.setFormatter(formatter)
+logger.addHandler(logHandler)
+# ===================================================================
 
 # Optional libs (best-effort)
 try:
