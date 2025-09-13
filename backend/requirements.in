@@ -5,3 +5,11 @@ python-json-logger
 passlib[bcrypt]
 sqlmodel
 python-multipart
+pydantic-settings
+python-dotenv
+cryptography
+# Optional but in your code
+river
+scapy
+geoip2
+reportlab
